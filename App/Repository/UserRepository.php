@@ -10,22 +10,23 @@ class UsuarioRepository {
     }
 
     public function getAllUsuarios() {
-        $productos = [];
+        $usuarios = [];
         $sql = "SELECT * FROM usuarios";
         $result = $this->conn->query($sql);
         
         if ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
-                $productos[] = new Usuario($row['nombre'], $row['email']);
+                $usuarios[] = new Usuario($row ['id'],$row['nombre'], $row['email']);
             }
         }
-        return $productos;
+        return $usuarios;
     }
     public function create(Usuario $user) {
-        $stmt = $this->conn->prepare("INSERT INTO usuarios (nombre, email) VALUES (?, ?)");
+        $stmt = $this->conn->prepare("INSERT INTO usuarios (id,nombre, email) VALUES (?,?, ?)");
+        $id = $user->getId();
         $nombre = $user->getNombre(); 
-        $email = $user->getEmail();
-        $stmt->bind_param("ss",$nombre, $email);
+        $email = $user->getEmail();        
+        $stmt->bind_param("sss",$id,$nombre, $email);
         $stmt->execute();
     }
 
@@ -39,6 +40,36 @@ class UsuarioRepository {
     public function __destruct() {
         $this->conn->close();
     }
+
+    public function update(Usuario $user) {
+        $sql = "UPDATE usuarios SET nombre = ?, email = ? WHERE id = ?";
+        $stmt = $this->conn->prepare($sql);
+        $id = $user->getId();
+        $nombre = $user->getNombre();
+        $email = $user->getEmail();
+        $stmt->bind_param("sss", $nombre, $email, $id);
+        return $stmt->execute();
+    }
+    
+
+    public function getUsuarioById($id) {
+        $sql = "SELECT * FROM usuarios WHERE id = ?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("s", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        return new Usuario($row['id'], $row['nombre'], $row['email']);
+    }
+
+    public function delete($id) {
+        $sql = "DELETE FROM usuarios WHERE id = ?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("s", $id);
+        return $stmt->execute();
+    }
+    
+    
 }
 ?>
 

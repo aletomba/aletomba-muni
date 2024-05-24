@@ -27,7 +27,7 @@ class UsuarioController
     public function mostrarDatos()
     {
         $usuarios = $this->usuarioRepository->getAllUsuarios();
-        $usuariosView = $usuarios;
+              
         require_once "View/UserView/UserView.php";
     }
     
@@ -35,27 +35,70 @@ class UsuarioController
         require_once "View/UserView/UserCreate.php";
     }
 
-    public function register() {
-        if (!empty($_POST['btnreg'])) {
-            $name = $_POST['name'];
-            $email = $_POST['email'];
-            $recaptchaResponse = $_POST['g-recaptcha-response'];
+    public function register()
+    {    
+        $id = 0;
+        $name = $_POST['nombre'];       
+        $email = $_POST['email'];
+        $recaptchaResponse = $_POST['g-recaptcha-response'];
 
-            try {
-                $this->validate($name, $email, $recaptchaResponse);                
-                $user = new Usuario($name, $email);
-                $this->usuarioRepository->create($user);
-                echo "¡Usuario registrado con éxito!";
-            } catch (Exception $e) {
-                echo "Error: " . $e->getMessage();
-            }
+        try {
+            $this->validate($name, $email, $recaptchaResponse);
+            $user = new Usuario($id, $name, $email);
+            $this->usuarioRepository->create($user);
+            echo "¡Usuario registrado con éxito!";
+            } 
+        catch (Exception $e) {
+            echo "Error: " . $e->getMessage();       
         }
+
         return include_once "View/UserView/UserCreate.php";
     }
 
-    private function validate($name, $email, $recaptchaResponse) {
-        if (empty($name) || empty($email) || empty($recaptchaResponse)) {
+   
+    public function updateUsuario() {
+        $id = $_GET['id'];
+        $usuario = $this->usuarioRepository->getUsuarioById($id);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $nombre = $_POST['nombre'];
+            $email = $_POST['email'];
+            $recaptchaResponse = $_POST['g-recaptcha-response'];
+            $usuario->setNombre($nombre);
+            $usuario->setEmail($email);
+
+            try {
+                $this->validateRecaptcha($recaptchaResponse);                           
+                $user = new Usuario($id,$nombre, $email);
+                if ($this->usuarioRepository->update($user)) {
+                    echo "¡Usuario actualizado con éxito!";
+                    exit();
+                }             
+            } catch (Exception $e) {
+                echo "Error: " . $e->getMessage();
+            }
+
+           
+        }
+
+       return include "View/UserView/UserCreate.php";
+    }
+
+    public function deleteUsuario() {
+        $id = $_GET['id'];
+        if ($this->usuarioRepository->delete($id)) {
+            echo "¡Usuario eliminado con éxito!";
+            exit();
+        }
+    }
+
+    private function validate($name, $email,$recaptchaResponse) {
+        if (empty($name) || empty($email)) {
             throw new Exception("Todos los campos son obligatorios.");
+        }
+        
+        if (!preg_match("/^[a-zA-Z]+$/", $name)) {
+            throw new Exception("El nombre solo puede contener letras.");
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -65,8 +108,15 @@ class UsuarioController
         if ($this->usuarioRepository->findByEmail($email)) {
             throw new Exception("El correo electrónico ya está en uso.");
         }
+        $this-> validateRecaptcha($recaptchaResponse);
+      
+    }
 
-        // Validar reCAPTCHA
+    private function validateRecaptcha($recaptchaResponse)
+    {
+        if(empty($recaptchaResponse)){
+            throw new Exception("Todos los campos son obligatorios.");
+        }
         $recaptchaUrl = 'https://www.google.com/recaptcha/api/siteverify';
         $response = file_get_contents($recaptchaUrl . '?secret=' . $this->recaptchaSecret . '&response=' . $recaptchaResponse);
         $responseKeys = json_decode($response, true);

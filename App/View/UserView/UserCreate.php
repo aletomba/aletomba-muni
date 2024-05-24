@@ -3,23 +3,27 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <form id="registerForm" method="POST" action="">
+        <form action="index.php?accion=<?php echo isset($usuario) ? 'updateUsuario&id=' . $usuario->getId() : 'register'; ?>" method="POST">
                 <div class="form-group">
-                    <label for="nombre">Nombre:</label>
-                    <input type="text" class="form-control" id="name" name="name" required>
+                    <label for="nombre">Nombre</label>
+                    <input type="text" name="nombre" id="nombre" class="form-control" value="<?php echo isset($usuario) ? $usuario->getNombre() : ''; ?>" required>
                 </div>
                 <div class="form-group">
-                    <label for="email">Correo Electrónico:</label>
-                    <input type="email" class="form-control" id="email" name="email" required>    
+                    <label for="email">Email</label>
+                    <input type="email" name="email" id="email" class="form-control" value="<?php echo isset($usuario) ? $usuario->getEmail() : ''; ?>" required>
                 </div>
                 <div class="form-group">
                     <div class="g-recaptcha" data-sitekey="6Lf_kOUpAAAAAMtxXcQAwzORRgrFlY5OI2q62pmh"></div> <!-- reCAPTCHA -->
                 </div>
-                <button type="submit" class="btn btn-primary" value="register" name="btnreg">Registrar</button>
+                <?php if (isset($usuario)) { ?>
+                    <input type="hidden" name="id" value="<?php echo $usuario->getId(); ?>">
+                <?php } ?>
+                <button name="btnreg" type="submit" class="btn btn-primary"><?php echo isset($usuario) ? 'Actualizar' : 'Crear'; ?></button>
             </form>
         </div>
     </div>
 </div>
+
 
 
 
